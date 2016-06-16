@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+	<meta charset="UTF-8">
+	<title>赛车</title>
+	</head>
+	<style type="text/css">
+	html,body{padding:0;margin:0;width:100%;height:100%;overflow:hidden;font-family:"microsoft yahei";}
+#myCanvas{background-color:#fff;display:block;width:100%;position:absolute;top:0;left:0;}
+.div{display:none;background:green;color:#fff;padding:10px 0px 10px 0px;margin:200px auto;width:200px;}
+.restart{display:none;background:purple;color:#fff;padding:10px 0px 10px 0px;margin:20px auto;width:200px;}
+.span{display:block;color:#fff;width:100%;text-align:center;margin-top:200px;}
+.score{display:block;color:#fff;width:100%;text-align:center;margin-top:150px;font-size:17px;display:none;}
+.score strong{color:yellow;}
+</style>
+<body>
+<div class="p1fontTop" style="opacity:0.8;text-align:center;left:0;right:0;top:0;bottom:0;color:#fff;background:black;  position: fixed;z-index: 11111;">
+	<div class="div">开始游戏</div>
+	<span class="score">太菜了，才跑了<strong></strong>米</span>
+	<div class="restart">再玩一次</div>
+	<span class="span"></span>
+	
+</div>
+ <img id="bg" src="img/track.png" style="display:none;">
+ <img id="car" src="img/car.png" style="display:none;">
+ <canvas id="myCanvas" width="320" height="566"></canvas>
+<script src="js/zepto.min.js"></script>
+<script src="js/touch-0.2.14.min.js"></script>
+<script>
+
+$(document).ready(function() {
+   var loadPercent = 0;
+   var currentPercent = 0;
+   var timeline = 0;
+   var isDeviceMotionHandler=0;
+   var imgsrc = [
+   {src:"img/track.png",id:"",per:"50"},
+   {src:"img/car.png",id:"",per:"100"} 
+   ];
+// 预加载
+function loading(percent){
+  percent=(percent);   
+  $(".span").text(percent+"%");
+}
+function loadingEffect(){
+  var le = function(){
+    if(currentPercent <= loadPercent){
+      loading(currentPercent);
+      currentPercent ++;
+
+    }
+    if(currentPercent > 100){
+      isDeviceMotionHandler=1;
+      clearInterval(intervalId); 
+      
+      $(".span").css("display","none");
+      $(".div").css("display","block");
+      
+
+    }
+  }
+  intervalId = setInterval(le,20);
+}
+touch.on('.div', 'tap', function(ev){
+	$(".p1fontTop").css("display","none");
+	$(".div").css("display","none");
+	aaa();  
+})
+touch.on('.restart', 'tap', function(ev){
+	$(".p1fontTop").css("display","none");
+	aaa();  
+})
+    //loading images
+    function preloadImages(){
+      if(imgsrc.length <= 0){
+        //isPreloadReady = true;
+      }else{
+        var res = imgsrc[0];
+        imgsrc.splice(0,1);
+        var Img = new Image(); 
+        Img.src = res.src; 
+        Img.onload = function () { 
+          loadPercent = res.per;
+          preloadImages();
+        }
+      }
+    }
+   preloadImages();
+   loadingEffect();
+
+ })
+//游戏开始
+function aaa(){
+    var wid = $(window).width();
+    var hei = $(window).height();
+    var scaleTouch = 320 / wid;
+    var bgY=0;
+    var v=8;
+    var score=0;
+    var carStatus=0;
+    var carV=5;
+    var carX=120;
+    var status=0;
+    var wayNum=2;
+    var manyCar=[];
+    //manyCar.splice(0,manyCar.length);
+    
+    var carTime=0;
+    var carT=0;
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    document.ontouchstart=function(){
+	  return false;
+	}
+    var bg = document.getElementById("bg");
+    var car = document.getElementById("car");
+
+    touch.on('#myCanvas', 'swipeleft', function(ev){
+	    if(wayNum>1&& status == 0&&carStatus==0){
+    	   wayNum--;
+    	   carStatus=1;
+    	}
+	});
+	touch.on('#myCanvas', 'swiperight', function(ev){
+	    if(wayNum<3&& status == 0&&carStatus==0){
+    	   wayNum++;
+    	   carStatus=2;
+    	}
+	});
+
+    var good=setInterval(function() {
+    	score+=v;
+    	ctx.clearRect(0, 0, 320, 566);
+
+        //跑道
+        ctx.drawImage(bg, 0, 0, 640, 1132, 0, bgY, 320, 566);
+        ctx.drawImage(bg, 0, 0, 640, 1132, 0, bgY - 566, 320, 566);
+        if(status==0){bgY+=v;}
+        if (bgY > 565-(566%v)) {
+            bgY = 566%v;
+        }
+
+        if(carStatus==1&& status == 0){
+        	carX-=10;
+        	if(carX==10||carX==120){
+        		carStatus=0;
+        	}
+        }
+        if(carStatus==2&& status == 0){
+        	carX+=10;
+        	if(carX==230||carX==120){
+        		carStatus=0;
+        	}
+        }
+
+        ctx.drawImage(car, 2382, 0, 397, 800, carX, hei*scaleTouch-(800*80/397)-30, 80, 800*80/397);
+        //分数
+        ctx.font = 10 + "px Arial";
+        ctx.fillStyle = "#fff";
+        ctx.fillText("Score  " + score, 10, 20);
+
+        //路上的车
+        if (carTime > 600 && status == 0) {
+            carV+=0.5;
+            v+=0.5;
+            var random1 = Math.floor(Math.random()*3);
+            var random2 = Math.floor(Math.random()*5);
+
+            manyCar.push([10+110*random1,-400,397*random2]);
+            carTime = 0;
+        }
+        if(status==0){carTime+=carV;}
+
+        $.each(manyCar,function(n, value) {        	
+        	if(status==0){manyCar[n][1]+=carV;}
+        	if(manyCar[n][1]>1300){manyCar.splice(n, 1);}
+        	if(Math.abs(manyCar[n][0]-carX)<73&&Math.abs(manyCar[n][1]-(hei*scaleTouch-(800*80/397)-30))<(800*78/397)){
+        		status=1;
+        		clearInterval(good);
+        		$(".p1fontTop").css("display","block");
+	           $(".restart").css("display","block");
+	           $(".score").css("display","block");
+	           $(".score strong").text(score);
+	           
+        	}
+        	ctx.drawImage(car, manyCar[n][2], 0, 397, 800,manyCar[n][0], manyCar[n][1], 80, 800*80/397);
+        })
+        
+    },17);
+
+}
+</script>
+
+</body>
+</html>
+	
